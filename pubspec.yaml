@@ -38,6 +38,7 @@ dependencies:
   flutter_tts: ^4.1.0
   path_provider: ^2.1.5
   just_audio: ^0.9.42
+  just_audio_background: ^0.0.1-beta.13
   flutter_bloc: ^8.1.6
 
 dev_dependencies:
