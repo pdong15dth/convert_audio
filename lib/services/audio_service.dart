@@ -35,19 +35,18 @@ class AudioService {
       _mergeAudioFiles().then((mergedPath) {
         mergedFilePath = mergedPath;
         print('Merged audio file created at: $mergedPath');
-        _deleteExistingOutputFiles();
+        _deleteExistingFiles('output_');
       }).catchError((error) {
         print('Error merging audio files: $error');
       });
     }
   }
 
-  Future<void> _deleteExistingOutputFiles() async {
+  Future<void> _deleteExistingFiles(String filePattern) async {
     final musicDir = Directory('/storage/emulated/0/Music');
     try {
       final existingFiles = musicDir.listSync().whereType<File>().where((file) {
-        return file.path.contains('output_') &&
-            file.path.endsWith('.wav');
+        return file.path.contains(filePattern) && file.path.endsWith('.wav');
       });
       for (var file in existingFiles) {
         print('Deleting file: ${file.path}');
@@ -83,7 +82,6 @@ class AudioService {
 
       // Delete temp files after successful merge
       await File(listFilePath).delete();
-      // await _deleteExistingOutputFiles();
 
       return mergedFilePath;
     } catch (e) {
@@ -93,7 +91,8 @@ class AudioService {
   }
 
   Future<void> convertLongTextToAudio(String longText) async {
-    await _deleteExistingOutputFiles();
+    await _deleteExistingFiles('output_');
+    await _deleteExistingFiles('convert_audio_app_merged');
 
     completedChunks = 0;
     audioFilePaths = [];
