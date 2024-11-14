@@ -12,10 +12,20 @@ class AudioService {
 
   Function(int, int)? onProgressChanged;
   Function()? onComplete;
+  Function(Duration)? onPositionChanged;
+  Function(Duration)? onDurationChanged;
 
   AudioService() {
     flutterTts.setCompletionHandler(() {
       _handleCompletion();
+    });
+
+    audioPlayer.positionStream.listen((position) {
+      onPositionChanged?.call(position);
+    });
+    
+    audioPlayer.durationStream.listen((duration) {
+      if (duration != null) onDurationChanged?.call(duration);
     });
   }
 
@@ -134,5 +144,9 @@ class AudioService {
 
   void dispose() {
     audioPlayer.dispose();
+  }
+
+  Future<void> seek(Duration position) async {
+    await audioPlayer.seek(position);
   }
 }

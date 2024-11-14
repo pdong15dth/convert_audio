@@ -4,6 +4,7 @@ import 'services/audio_service.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +48,8 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isConverting = false;
   bool isPlaying = false;
   bool isComplete = false;
+  Duration? currentPosition;
+  Duration? totalDuration;
 
   @override
   void initState() {
@@ -63,6 +66,14 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         isComplete = true;
       });
+    };
+
+    _audioService.onPositionChanged = (position) {
+      setState(() => currentPosition = position);
+    };
+    
+    _audioService.onDurationChanged = (duration) {
+      setState(() => totalDuration = duration);
     };
   }
 
@@ -137,6 +148,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   _audioService.completedChunks ==
                       _audioService.totalChunks) ...[
                 const SizedBox(height: 16),
+                if (currentPosition != null && totalDuration != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ProgressBar(
+                      progress: currentPosition!,
+                      total: totalDuration!,
+                      buffered: totalDuration!, // Optional: implement buffering if needed
+                      onSeek: (duration) {
+                        _audioService.seek(duration);
+                      },
+                      timeLabelLocation: TimeLabelLocation.sides,
+                    ),
+                  ),
+                ],
                 ElevatedButton(
                   onPressed: isPlaying ? null : playAudio,
                   child: Text(isPlaying ? 'Đang phát...' : 'Phát audio'),
