@@ -32,10 +32,10 @@ class AudioService {
 
     if (completedChunks == totalChunks) {
       onComplete?.call();
-      _mergeAudioFiles().then((mergedPath) {
+      _mergeAudioFiles().then((mergedPath) async {
         mergedFilePath = mergedPath;
         print('Merged audio file created at: $mergedPath');
-        _deleteExistingFiles('output_');
+        await _deleteExistingFiles('output_');
       }).catchError((error) {
         print('Error merging audio files: $error');
       });
