@@ -2,13 +2,18 @@ import 'package:convert_audio/text.dart';
 import 'package:flutter/material.dart';
 import 'services/audio_service.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.convert_audio.app.audio',
     androidNotificationChannelName: 'Audio playback',
     androidNotificationOngoing: true,
   );
+
   runApp(const MyApp());
 }
 
@@ -46,6 +51,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    //check nếu chưa có quyền truy cập bộ nhớ thì xin
+
+    requestStoragePermission();
 
     _audioService.onProgressChanged = (completed, total) {
       setState(() {});
@@ -139,5 +147,45 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+
+  Future<void> requestStoragePermission() async {
+    final status = await Permission.storage.status;
+    
+    if (!(await Permission.manageExternalStorage.status.isDenied)) {
+      return;
+    }
+
+    if (status.isDenied) {
+      if (!mounted) return; // Add this check
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Cấp quyền truy cập'),
+          content: const Text(
+              'Ứng dụng cần quyền truy cập bộ nhớ để lưu file audio'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final _ = await Permission.storage.request();
+                // if (result.isDenied) {
+                //   SystemNavigator.pop(); // Thoát app nếu không được cấp quyền
+                // }
+                await Permission.manageExternalStorage.request();
+              },
+              child: const Text('Đồng ý'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }

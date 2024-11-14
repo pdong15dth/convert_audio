@@ -4,6 +4,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 
 class AudioService {
   final FlutterTts flutterTts = FlutterTts();
@@ -49,12 +50,44 @@ class AudioService {
     }
   }
 
+  Future<String> _mergeAudioFiles() async {
+    final musicDir = Directory('/storage/emulated/0/Music');
+    final mergedFilePath = '${musicDir.path}/convert_audio_app_merged.wav';
+
+    try {
+      final files = musicDir.listSync().whereType<File>().where((file) {
+        return file.path.contains('convert_audio_app') &&
+            file.path.endsWith('.wav');
+      }).toList();
+
+      files.sort((a, b) {
+        final aNum = int.parse(a.path.split('output_').last.split('.').first);
+        final bNum = int.parse(b.path.split('output_').last.split('.').first);
+        return aNum.compareTo(bNum);
+      });
+
+      final inputFiles = files.map((f) => "file '${f.path}'").join('\n');
+      final listFilePath = '${musicDir.path}/files.txt';
+      await File(listFilePath).writeAsString(inputFiles);
+
+      await FFmpegKit.execute(
+          '-f concat -safe 0 -i $listFilePath -c copy $mergedFilePath');
+
+      // Delete temp files after successful merge
+      await File(listFilePath).delete();
+      // await _deleteExistingOutputFiles();
+
+      return mergedFilePath;
+    } catch (e) {
+      print('Error merging audio files: $e');
+      rethrow;
+    }
+  }
+
   Future<void> convertLongTextToAudio(String longText) async {
     completedChunks = 0;
     audioFilePaths = [];
     tempPaths.clear();
-
-    await _deleteExistingOutputFiles();
 
     final chunks = <String>[];
     for (var i = 0; i < longText.length; i += 1000) {
@@ -73,40 +106,18 @@ class AudioService {
   }
 
   Future<void> playAudio() async {
-    if (audioFilePaths.isEmpty) return;
-
-    final musicDir = Directory('/storage/emulated/0/Music');
-
+    final mergedFilePath = await _mergeAudioFiles();
     try {
-      final files = musicDir.listSync().whereType<File>().where((file) {
-        return file.path.contains('convert_audio_app') &&
-            file.path.endsWith('.wav');
-      }).toList();
-
-      files.sort((a, b) {
-        final aNum = int.parse(a.path.split('output_').last.split('.').first);
-        final bNum = int.parse(b.path.split('output_').last.split('.').first);
-        return aNum.compareTo(bNum);
-      });
-
-      // Create playlist
-      final playlist = ConcatenatingAudioSource(
-        children: files.map((file) {
-          return AudioSource.file(
-            file.path,
-            tag: MediaItem(
-              id: file.path,
-              title: 'Audio Part ${files.indexOf(file) + 1}',
-              artist: 'Text to Speech',
-              // Optional: Add more metadata
-              // artUri: Uri.parse('https://example.com/albumart.jpg'),
-            ),
-          );
-        }).toList(),
+      await audioPlayer.setAudioSource(
+        AudioSource.file(
+          mergedFilePath,
+          tag: MediaItem(
+            id: mergedFilePath,
+            title: 'Complete Audio',
+            artist: 'Text to Speech',
+          ),
+        ),
       );
-
-      // Set and play the playlist
-      await audioPlayer.setAudioSource(playlist);
       await audioPlayer.play();
     } catch (e) {
       print('Error playing audio: $e');
