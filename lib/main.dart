@@ -1,9 +1,8 @@
 import 'package:convert_audio/text.dart';
 import 'package:flutter/material.dart';
-import 'services/audio_service.dart';
+import 'services/bns_audio_service.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/services.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 
 void main() async {
@@ -44,7 +43,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final AudioService _audioService = AudioService();
+  final BNSAudioService _audioService = BNSAudioService();
   bool isConverting = false;
   bool isPlaying = false;
   bool isComplete = false;

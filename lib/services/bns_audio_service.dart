@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 
-class AudioService {
+class BNSAudioService {
   final FlutterTts flutterTts = FlutterTts();
   final AudioPlayer audioPlayer = AudioPlayer();
 
@@ -15,7 +15,7 @@ class AudioService {
   Function(Duration)? onPositionChanged;
   Function(Duration)? onDurationChanged;
 
-  AudioService() {
+  BNSAudioService() {
     flutterTts.setCompletionHandler(() {
       _handleCompletion();
     });
